@@ -385,6 +385,12 @@ do
   assert(minint == load("return " .. minint)())
   assert(eqT(maxint, load("return " .. maxint)()))
 
+  -- limit for integer encoding in binary chunks
+  -- (~(-1 >> 1) is optimized by the compiler as minint, which is
+  -- then encoded in a binary chunk as max unsigned)
+  local f = string.dump(function () return  ~(-1 >> 1) end)
+  assert(load(f)() == minint)
+
   assert(eqT(10000000000000000000000.0, 10000000000000000000000))
   assert(eqT(-10000000000000000000000.0, -10000000000000000000000))
 end
@@ -832,6 +838,11 @@ do
   local a1, a2, a3, a4, a5 = 0, 0, "\0\0\0\0\0\0\0\0", 0, "\0\0\0\0\0\0\0\0"
   assert(a1 == a2 and a2 == a4 and a1 ~= a3)
   assert(a3 == a5)
+
+  -- Bug since 5.4: Results differ for constant 0 versus variable 0;
+  -- (mz - 0) should be -0.0, but it resulted in +0.0
+  local zi = 0
+  assert(1/(mz - 0) == 1/(mz - zi))
 end
 
 
