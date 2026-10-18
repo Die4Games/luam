@@ -101,6 +101,7 @@
 #include "ldo.c"
 #include "lvm.c"
 #include "lapi.c"
+#include "lnative.c"
 
 /* auxiliary library -- used by all */
 #include "lauxlib.c"

@@ -148,6 +148,8 @@
 
 LUAI_FUNC lu_byte luaH_get (Table *t, const TValue *key, TValue *res);
 LUAI_FUNC lu_byte luaH_getshortstr (Table *t, TString *key, TValue *res);
+LUAI_FUNC lu_byte luaH_GetShortStringIC (Table *Receiver, TString *Key,
+                                       TValue *Result, unsigned int *Cache);
 LUAI_FUNC lu_byte luaH_getstr (Table *t, TString *key, TValue *res);
 LUAI_FUNC lu_byte luaH_getint (Table *t, lua_Integer key, TValue *res);
 

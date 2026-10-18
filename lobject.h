@@ -608,6 +608,7 @@ typedef struct Proto {
   int sizeupvalues;  /* size of 'upvalues' */
   int sizek;  /* size of 'k' */
   int sizecode;
+  int SizeFieldIC;
   int sizelineinfo;
   int sizep;  /* size of 'p' */
   int sizelocvars;
@@ -616,6 +617,7 @@ typedef struct Proto {
   int lastlinedefined;  /* debug information  */
   TValue *k;  /* constants used by the function */
   Instruction *code;  /* opcodes */
+  unsigned int *FieldIC;
   struct Proto **p;  /* functions defined inside the function */
   Upvaldesc *upvalues;  /* upvalue information */
   ls_byte *lineinfo;  /* information about source lines (debug information) */

@@ -48,6 +48,7 @@
 
 
 LUAI_FUNC Proto *luaF_newproto (lua_State *L);
+LUAI_FUNC void luaF_InitFieldIC (lua_State *L, Proto *Prototype);
 LUAI_FUNC CClosure *luaF_newCclosure (lua_State *L, int nupvals);
 LUAI_FUNC LClosure *luaF_newLclosure (lua_State *L, int nupvals);
 LUAI_FUNC void luaF_initupvals (lua_State *L, LClosure *cl);

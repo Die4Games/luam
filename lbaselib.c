@@ -506,6 +506,155 @@ static int luaB_tostring (lua_State *L) {
 }
 
 
+static int luaB_istype (lua_State *L) {
+  int vt = lua_type(L, 1);
+  int et = lua_type(L, 2);
+  if (et == LUA_TNIL || et == LUA_TNONE) {
+    lua_pushboolean(L, 1);
+    return 1;
+  }
+  if (et == LUA_TSTRING) {
+    const char *exp = lua_tostring(L, 2);
+    if (exp == NULL || exp[0] == '\0' || strcmp(exp, "any") == 0 ||
+        strcmp(exp, "unknown") == 0 || strcmp(exp, "void") == 0 ||
+        strcmp(exp, "object") == 0) {
+      lua_pushboolean(L, 1);
+      return 1;
+    }
+    if (strcmp(exp, "integer") == 0) {
+      lua_pushboolean(L, lua_isinteger(L, 1));
+      return 1;
+    }
+    if (strcmp(exp, "float") == 0 || strcmp(exp, "number") == 0) {
+      lua_pushboolean(L, vt == LUA_TNUMBER);
+      return 1;
+    }
+    if (strcmp(exp, "string") == 0) {
+      lua_pushboolean(L, vt == LUA_TSTRING);
+      return 1;
+    }
+    if (strcmp(exp, "boolean") == 0 || strcmp(exp, "bool") == 0) {
+      lua_pushboolean(L, vt == LUA_TBOOLEAN);
+      return 1;
+    }
+    if (strcmp(exp, "table") == 0) {
+      lua_pushboolean(L, vt == LUA_TTABLE);
+      return 1;
+    }
+    if (strcmp(exp, "function") == 0) {
+      lua_pushboolean(L, vt == LUA_TFUNCTION);
+      return 1;
+    }
+    if (strcmp(exp, "userdata") == 0) {
+      lua_pushboolean(L, vt == LUA_TUSERDATA || vt == LUA_TLIGHTUSERDATA);
+      return 1;
+    }
+    if (strcmp(exp, "nil") == 0) {
+      lua_pushboolean(L, vt == LUA_TNIL);
+      return 1;
+    }
+  }
+  lua_pushboolean(L, 0);
+  return 1;
+}
+
+
+static int luaB_checktype (lua_State *L) {
+  int vt = lua_type(L, 1);
+  int et = lua_type(L, 2);
+  if (et == LUA_TNIL || et == LUA_TNONE) {
+    lua_settop(L, 1);
+    return 1;
+  }
+  if (et == LUA_TSTRING) {
+    const char *exp = lua_tostring(L, 2);
+    if (exp == NULL || exp[0] == '\0' || strcmp(exp, "any") == 0 ||
+        strcmp(exp, "unknown") == 0 || strcmp(exp, "void") == 0 ||
+        strcmp(exp, "object") == 0) {
+      lua_settop(L, 1);
+      return 1;
+    }
+    if (strcmp(exp, "integer") == 0) {
+      if (lua_isinteger(L, 1)) {
+        lua_settop(L, 1);
+        return 1;
+      }
+      return luaL_error(L, "type mismatch: expected integer, got %s",
+                        vt == LUA_TNUMBER ? "float" : luaL_typename(L, 1));
+    }
+    if (strcmp(exp, "float") == 0) {
+      if (vt == LUA_TNUMBER) {
+        if (lua_isinteger(L, 1)) {
+          lua_pushnumber(L, (lua_Number)lua_tointeger(L, 1));
+          return 1;
+        }
+        lua_settop(L, 1);
+        return 1;
+      }
+      return luaL_error(L, "type mismatch: expected float, got %s",
+                        luaL_typename(L, 1));
+    }
+    if (strcmp(exp, "number") == 0) {
+      if (vt == LUA_TNUMBER) {
+        lua_settop(L, 1);
+        return 1;
+      }
+      return luaL_error(L, "type mismatch: expected number, got %s",
+                        luaL_typename(L, 1));
+    }
+    if (strcmp(exp, "string") == 0) {
+      if (vt == LUA_TSTRING) {
+        lua_settop(L, 1);
+        return 1;
+      }
+      return luaL_error(L, "type mismatch: expected string, got %s",
+                        luaL_typename(L, 1));
+    }
+    if (strcmp(exp, "boolean") == 0 || strcmp(exp, "bool") == 0) {
+      if (vt == LUA_TBOOLEAN) {
+        lua_settop(L, 1);
+        return 1;
+      }
+      return luaL_error(L, "type mismatch: expected boolean, got %s",
+                        luaL_typename(L, 1));
+    }
+    if (strcmp(exp, "table") == 0) {
+      if (vt == LUA_TTABLE) {
+        lua_settop(L, 1);
+        return 1;
+      }
+      return luaL_error(L, "type mismatch: expected table, got %s",
+                        luaL_typename(L, 1));
+    }
+    if (strcmp(exp, "function") == 0) {
+      if (vt == LUA_TFUNCTION) {
+        lua_settop(L, 1);
+        return 1;
+      }
+      return luaL_error(L, "type mismatch: expected function, got %s",
+                        luaL_typename(L, 1));
+    }
+    if (strcmp(exp, "userdata") == 0) {
+      if (vt == LUA_TUSERDATA || vt == LUA_TLIGHTUSERDATA) {
+        lua_settop(L, 1);
+        return 1;
+      }
+      return luaL_error(L, "type mismatch: expected userdata, got %s",
+                        luaL_typename(L, 1));
+    }
+    if (strcmp(exp, "nil") == 0) {
+      if (vt == LUA_TNIL) {
+        lua_settop(L, 1);
+        return 1;
+      }
+      return luaL_error(L, "type mismatch: expected nil, got %s",
+                        luaL_typename(L, 1));
+    }
+  }
+  return luaL_error(L, "unknown runtime type (MLua Prelude required for named types)");
+}
+
+
 static const luaL_Reg base_funcs[] = {
   {"assert", luaB_assert},
   {"collectgarbage", luaB_collectgarbage},
@@ -530,6 +679,8 @@ static const luaL_Reg base_funcs[] = {
   {"tostring", luaB_tostring},
   {"type", luaB_type},
   {"xpcall", luaB_xpcall},
+  {"__istype", luaB_istype},
+  {"__checktype", luaB_checktype},
   /* placeholders */
   {LUA_GNAME, NULL},
   {"_VERSION", NULL},

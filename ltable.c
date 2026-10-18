@@ -992,6 +992,35 @@ lu_byte luaH_getshortstr (Table *t, TString *key, TValue *res) {
 }
 
 
+//===------------------------------------------------------------------===//
+// Field IC //
+
+lu_byte luaH_GetShortStringIC (Table *Receiver, TString *Key,
+                             TValue *Result, unsigned int *Cache) {
+  unsigned int Index = *Cache - 1u;
+  Node *Entry;
+  lua_assert(strisshr(Key));
+  if (Index < allocsizenode(Receiver)) {
+    Entry = gnode(Receiver, Index);
+    if (keyisshrstr(Entry) && eqshrstr(keystrval(Entry), Key))
+      return finishnodeget(gval(Entry), Result);
+  }
+  Entry = hashstr(Receiver, Key);
+  for (;;) {
+    int Next;
+    if (keyisshrstr(Entry) && eqshrstr(keystrval(Entry), Key)) {
+      *Cache = cast_uint(Entry - Receiver->node) + 1u;
+      return finishnodeget(gval(Entry), Result);
+    }
+    Next = gnext(Entry);
+    if (Next == 0) {
+      *Cache = 0;
+      return LUA_VABSTKEY;
+    }
+    Entry += Next;
+  }
+}
+
 static const TValue *Hgetlongstr (Table *t, TString *key) {
   TValue ko;
   lua_assert(!strisshr(key));

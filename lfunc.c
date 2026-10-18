@@ -20,6 +20,7 @@
 #include "lgc.h"
 #include "lmem.h"
 #include "lobject.h"
+#include "lopcodes.h"
 #include "lstate.h"
 
 
@@ -249,6 +250,8 @@ Proto *luaF_newproto (lua_State *L) {
   f->sizep = 0;
   f->code = NULL;
   f->sizecode = 0;
+  f->FieldIC = NULL;
+  f->SizeFieldIC = 0;
   f->lineinfo = NULL;
   f->sizelineinfo = 0;
   f->abslineinfo = NULL;
@@ -267,8 +270,33 @@ Proto *luaF_newproto (lua_State *L) {
 }
 
 
+//===------------------------------------------------------------------===//
+// Field IC //
+
+void luaF_InitFieldIC (lua_State *L, Proto *Prototype) {
+#if !defined(LUA_DISABLE_FIELD_IC)
+  int PC;
+  lua_assert(Prototype->FieldIC == NULL && Prototype->SizeFieldIC == 0);
+  for (PC = 0; PC < Prototype->sizecode; PC++) {
+    OpCode Opcode = GET_OPCODE(Prototype->code[PC]);
+    if (Opcode == OP_GETFIELD || Opcode == OP_GETTABUP || Opcode == OP_SELF) {
+      Prototype->FieldIC = luaM_newvectorchecked(L, Prototype->sizecode,
+                                                unsigned int);
+      Prototype->SizeFieldIC = Prototype->sizecode;
+      for (PC = 0; PC < Prototype->SizeFieldIC; PC++)
+        Prototype->FieldIC[PC] = 0;
+      return;
+    }
+  }
+#else
+  UNUSED(L);
+  UNUSED(Prototype);
+#endif
+}
+
 lu_mem luaF_protosize (Proto *p) {
   lu_mem sz = cast(lu_mem, sizeof(Proto))
+            + cast_uint(p->SizeFieldIC) * sizeof(unsigned int)
             + cast_uint(p->sizep) * sizeof(Proto*)
             + cast_uint(p->sizek) * sizeof(TValue)
             + cast_uint(p->sizelocvars) * sizeof(LocVar)
@@ -283,6 +311,7 @@ lu_mem luaF_protosize (Proto *p) {
 
 
 void luaF_freeproto (lua_State *L, Proto *f) {
+  luaM_freearray(L, f->FieldIC, cast_sizet(f->SizeFieldIC));
   if (!(f->flag & PF_FIXED)) {
     luaM_freearray(L, f->code, cast_sizet(f->sizecode));
     luaM_freearray(L, f->lineinfo, cast_sizet(f->sizelineinfo));

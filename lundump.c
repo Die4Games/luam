@@ -196,6 +196,7 @@ static void loadCode (LoadState *S, Proto *f) {
     f->sizecode = n;
     loadVector(S, f->code, n);
   }
+  luaF_InitFieldIC(S->L, f);
 }
 
 

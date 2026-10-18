@@ -46,6 +46,21 @@
 
 
 
+//===------------------------------------------------------------------===//
+// Field IC //
+
+#if !defined(LUA_DISABLE_FIELD_IC)
+#define GetFieldIC(Receiver,Key,Result,Tag) \
+  ((Tag) = !ttistable(Receiver) ? LUA_VNOTABLE : \
+    (cl->p->FieldIC == NULL ? \
+      luaH_getshortstr(hvalue(Receiver), Key, Result) : \
+      luaH_GetShortStringIC(hvalue(Receiver), Key, Result, \
+                            &cl->p->FieldIC[pc - cl->p->code - 1])))
+#else
+#define GetFieldIC(Receiver,Key,Result,Tag) \
+  luaV_fastget(Receiver, Key, Result, luaH_getshortstr, Tag)
+#endif
+
 /* limit for table tag-method chains (to avoid infinite loops) */
 #define MAXTAGLOOP	2000
 
@@ -1309,7 +1324,7 @@ void luaV_execute (lua_State *L, CallInfo *ci) {
         TValue *rc = KC(i);
         TString *key = tsvalue(rc);  /* key must be a short string */
         lu_byte tag;
-        luaV_fastget(upval, key, s2v(ra), luaH_getshortstr, tag);
+        GetFieldIC(upval, key, s2v(ra), tag);
         if (tagisempty(tag))
           Protect(luaV_finishget(L, upval, rc, ra, tag));
         vmbreak;
@@ -1347,7 +1362,7 @@ void luaV_execute (lua_State *L, CallInfo *ci) {
         TValue *rc = KC(i);
         TString *key = tsvalue(rc);  /* key must be a short string */
         lu_byte tag;
-        luaV_fastget(rb, key, s2v(ra), luaH_getshortstr, tag);
+        GetFieldIC(rb, key, s2v(ra), tag);
         if (tagisempty(tag))
           Protect(luaV_finishget(L, rb, rc, ra, tag));
         vmbreak;
@@ -1438,7 +1453,7 @@ void luaV_execute (lua_State *L, CallInfo *ci) {
         TValue *rc = KC(i);
         TString *key = tsvalue(rc);  /* key must be a short string */
         setobj2s(L, ra + 1, rb);
-        luaV_fastget(rb, key, s2v(ra), luaH_getshortstr, tag);
+        GetFieldIC(rb, key, s2v(ra), tag);
         if (tagisempty(tag))
           Protect(luaV_finishget(L, rb, rc, ra, tag));
         vmbreak;
